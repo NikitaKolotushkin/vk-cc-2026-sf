@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# OS
+.DS_Store
+
+# Материалы кейса и соседние источники. Датасет лежит в data/raw и в репозиторий входит.
+case/
+assets/
+*.pdf
