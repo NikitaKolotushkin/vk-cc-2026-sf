@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vk-case"
+version = "0.1.0"
+description = "Типизация и сверка датасета VK Case Champ 2026"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas==3.1.1",
+    "openpyxl==3.1.5",
+    "pyarrow==26.0.1",
+    "PyYAML==6.0.3",
+]
+
+[project.scripts]
+vkcc-convert = "vk_case.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

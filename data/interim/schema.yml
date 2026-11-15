@@ -1,0 +1,527 @@
+version: 1
+source_file: data/raw/VK_CaseChamp_2026_Отборочныи__этап_Датасет (1).xlsx
+storage: parquet
+joins:
+  businesses_to_market: none
+null_policy:
+  excel_em_dash: Пустое значение и null_reason = not_applicable. Ноль не подставляется.
+  suppressed_breakdown: Пустое значение без причины. Это скрытая малая группа, не ноль.
+  author_blank: Пустой автор остаётся пустым и не читается как false.
+  percents: Шкала 0…100, как в файле. Отдельной колонки 0…1 нет.
+tables:
+  businesses:
+    grain: Одно сообщество. Окно листа помечено как 30 дней и календарём с Маркетом не связано.
+    rows: 9754
+    primary_key:
+    - business_id
+    columns:
+    - name: business_id
+      dtype: int64
+      nullable: false
+      unit: id
+      note: Плотный суррогат этой выгрузки, значения 1…N без пропусков.
+    - name: theme
+      dtype: dictionary
+      nullable: false
+      unit: category
+      note: 42 значения листа, без перевода и без склейки с типом.
+    - name: business_type
+      dtype: dictionary
+      nullable: false
+      unit: category
+      note: Четыре значения листа как есть.
+    - name: subscribers
+      dtype: int64
+      nullable: false
+      unit: count
+      note: На листе все значения чётные. Значения не выше 100 кратны 12.
+    - name: posts_30d
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: clips_30d
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: product_posts_30d
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: product_clips_30d
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: regular_content_views
+      dtype: int64
+      nullable: false
+      unit: count
+      note: На листе все значения чётные. Колонка не помечена «за 30 дней», в отличие от постов.
+    - name: regular_content_likes
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: regular_content_reposts
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: product_content_views
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Отдельная лестница значений. Минимальное положительное значение на листе — 13.
+    - name: product_content_likes
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: product_content_reposts
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: product_card_opens_from_content
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: goods_loaded
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Ведёт себя как число позиций, не как флаг.
+    - name: active_goods
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: checkout_enabled
+      dtype: bool
+      nullable: false
+      unit: flag
+    - name: delivery_enabled
+      dtype: bool
+      nullable: false
+      unit: flag
+    - name: payment_enabled
+      dtype: bool
+      nullable: false
+      unit: flag
+    - name: original_content_author
+      dtype: bool
+      nullable: true
+      unit: flag
+      note: Пустое значение не равно false.
+    - name: referral_program
+      dtype: bool
+      nullable: false
+      unit: flag
+    - name: checkout_orders
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: checkout_gmv_rub
+      dtype: int64
+      nullable: false
+      unit: rub
+    - name: average_order_value_rub
+      dtype: int64
+      nullable: true
+      unit: rub
+      note: Пусто ровно при GMV = 0. На GMV / заказы не заменяется.
+    - name: ad_spend_rub
+      dtype: int64
+      nullable: false
+      unit: rub
+    - name: active_services
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: median_item_price_rub
+      dtype: int64
+      nullable: true
+      unit: rub
+      note: Заметная доля значений кратна 530. Ноль на листе встречается отдельно от пустоты и сохраняется.
+  market_contour_metrics:
+    grain: Одна метрика одного контура за 1–30 сентября 2026. Колонка «Всего» сюда не входит и суммой
+      контуров не является.
+    rows: 32
+    primary_key:
+    - metric_id
+    - contour
+    contours:
+      market_vk: Маркет Вконтакте
+      partner_1: Партнёр 1
+    value_columns: Целые count и rub лежат в value_int. Доли и проценты лежат в value_num. Заполнена ровно
+      одна из двух, кроме строки с null_reason.
+    columns:
+    - name: metric_id
+      dtype: string
+      nullable: false
+      unit: id
+      note: Латинский код метрики.
+    - name: metric_ru
+      dtype: string
+      nullable: false
+      unit: label
+      note: Подпись из листа итогов.
+    - name: contour
+      dtype: string
+      nullable: false
+      unit: id
+      note: market_vk или partner_1.
+    - name: value_int
+      dtype: int64
+      nullable: true
+      unit: number
+      note: Целые счетчики и рубли.
+    - name: value_num
+      dtype: float64
+      nullable: true
+      unit: number
+      note: Отношения и проценты в шкале файла.
+    - name: unit
+      dtype: string
+      nullable: false
+      unit: unit
+      note: count, rub, ratio или pct.
+    - name: null_reason
+      dtype: string
+      nullable: true
+      unit: code
+      note: not_applicable только у прочерка.
+  market_platform_metrics:
+    grain: Скаляр из колонки «Всего» нижнего блока листа итогов. Это не сумма Маркета и Партнёра.
+    rows: 9
+    primary_key:
+    - metric_id
+    columns:
+    - name: metric_id
+      dtype: string
+      nullable: false
+      unit: id
+    - name: metric_ru
+      dtype: string
+      nullable: false
+      unit: label
+    - name: value_int
+      dtype: int64
+      nullable: true
+      unit: count
+      note: Целые скаляры.
+    - name: value_num
+      dtype: float64
+      nullable: true
+      unit: pct
+      note: Процент в шкале 0…100.
+    - name: value_text
+      dtype: string
+      nullable: true
+      unit: text
+      note: Период строкой.
+    - name: unit
+      dtype: string
+      nullable: false
+      unit: unit
+      note: count, pct или date_range.
+    - name: is_nested
+      dtype: bool
+      nullable: false
+      unit: flag
+      note: true только у «в т.ч. из реферальных постов и клипов». Эту строку не складывают с соседней.
+  market_daily:
+    grain: Один календарный день, 1–30 сентября 2026. Время отброшено.
+    rows: 30
+    primary_key:
+    - date
+    columns:
+    - name: date
+      dtype: date
+      nullable: false
+      unit: date
+    - name: market_dau
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Дневной уник. Сумма дней не равна MAU.
+    - name: users_saw_goods
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Дневной уник. Сумма дней не равна месячному унику.
+    - name: users_opened_card
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Дневной уник. Сумма дней не равна месячному унику.
+    - name: search_queries
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: search_queries_with_card_open
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_impressions
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_impressions
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_card_button_clicks
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_card_button_clicks
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_orders
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_orders
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_paid_orders
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_gmv_rub
+      dtype: int64
+      nullable: false
+      unit: rub
+    - name: partner_gmv_rub
+      dtype: int64
+      nullable: false
+      unit: rub
+    - name: market_buyers
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Дневной уник. Сумма дней больше месячного уника.
+    - name: partner_buyers
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Дневной уник. Сумма дней больше месячного уника.
+    non_additive:
+    - market_dau
+    - users_saw_goods
+    - users_opened_card
+    - market_buyers
+    - partner_buyers
+  market_sources:
+    grain: Один источник открытий карточки. Шесть строк составляют полную сумму открытий. Вложенная реферальная
+      строка сюда не входит.
+    rows: 6
+    primary_key:
+    - source
+    columns:
+    - name: source
+      dtype: string
+      nullable: false
+      unit: label
+      note: Подпись источника как в файле.
+    - name: market_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_share_pct
+      dtype: float64
+      nullable: false
+      unit: pct
+      note: Шкала 0…100.
+    - name: partner_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_share_pct
+      dtype: float64
+      nullable: false
+      unit: pct
+      note: Шкала 0…100.
+  market_source_nested:
+    grain: Вложенная строка «в т.ч. из реферальных постов и клипов». Не седьмой источник.
+    rows: 1
+    primary_key:
+    - source
+    columns:
+    - name: source
+      dtype: string
+      nullable: false
+      unit: label
+    - name: partner_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Число больше суммы «Клипы + Лента» Партнёра.
+    - name: partner_share_pct
+      dtype: float64
+      nullable: false
+      unit: pct
+      note: Доля от всех открытий карточки Партнёра, шкала 0…100.
+  market_categories:
+    grain: Одна товарная категория. «Все товары», «Другое» и «Не определена» сохранены как категории.
+    rows: 18
+    primary_key:
+    - category
+    columns:
+    - name: category
+      dtype: string
+      nullable: false
+      unit: label
+    - name: market_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: market_orders
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Сумма по категориям не равна оформленным заказам.
+    - name: partner_card_opens
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_orders
+      dtype: int64
+      nullable: false
+      unit: count
+      note: Сумма по категориям не равна оформленным заказам.
+  buyers_demo:
+    grain: Одна ячейка пол × возраст. Пустой Маркет — подавленная группа, не ноль.
+    rows: 15
+    primary_key:
+    - gender
+    - age_band
+    columns:
+    - name: gender
+      dtype: string
+      nullable: false
+      unit: label
+      note: 'Как в файле: Пол.'
+    - name: age_band
+      dtype: string
+      nullable: false
+      unit: label
+      note: 'Как в файле: Возраст.'
+    - name: market_buyers
+      dtype: int64
+      nullable: true
+      unit: count
+      note: Пусто означает подавление малой группы.
+    - name: market_orders
+      dtype: int64
+      nullable: true
+      unit: count
+      note: Пусто в тех же строках, что и market_buyers.
+    - name: partner_buyers
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_orders
+      dtype: int64
+      nullable: false
+      unit: count
+  buyers_region:
+    grain: Один регион, включая «Не указан». Пустой Маркет у четырёх регионов — подавление, не ноль.
+    rows: 89
+    primary_key:
+    - region
+    columns:
+    - name: region
+      dtype: string
+      nullable: false
+      unit: label
+      note: 'Как в файле: Регион.'
+    - name: market_buyers
+      dtype: int64
+      nullable: true
+      unit: count
+      note: Пусто означает подавление малой группы.
+    - name: market_orders
+      dtype: int64
+      nullable: true
+      unit: count
+      note: Пусто в тех же строках, что и market_buyers.
+    - name: partner_buyers
+      dtype: int64
+      nullable: false
+      unit: count
+    - name: partner_orders
+      dtype: int64
+      nullable: false
+      unit: count
+  reconciliation:
+    grain: Одна арифметическая сверка. Расхождение записывается, исходные числа из-за него не правятся.
+    rows: по числу проверок
+    primary_key:
+    - check_id
+    columns:
+    - name: seq
+      dtype: int64
+      nullable: false
+      unit: meta
+      note: Порядок проверки.
+    - name: check_id
+      dtype: string
+      nullable: false
+      unit: meta
+      note: Стабильный код проверки.
+    - name: kind
+      dtype: string
+      nullable: false
+      unit: meta
+      note: shape, census, cross_sheet, rounding или invariant.
+    - name: lhs_label
+      dtype: string
+      nullable: false
+      unit: meta
+      note: Левая величина.
+    - name: rhs_label
+      dtype: string
+      nullable: false
+      unit: meta
+      note: Правая величина.
+    - name: lhs_value
+      dtype: float64
+      nullable: true
+      unit: meta
+      note: Левое число. Пусто у текстовой сверки.
+    - name: rhs_value
+      dtype: float64
+      nullable: true
+      unit: meta
+      note: Правое число. Пусто у текстовой сверки.
+    - name: delta
+      dtype: float64
+      nullable: true
+      unit: meta
+      note: lhs − rhs. Пусто у текстовой сверки.
+    - name: expected_delta
+      dtype: float64
+      nullable: true
+      unit: meta
+      note: Какая дельта считается верной для этого файла.
+    - name: tolerance
+      dtype: float64
+      nullable: true
+      unit: meta
+      note: Допуск вокруг expected_delta.
+    - name: status
+      dtype: string
+      nullable: false
+      unit: meta
+      note: pass или fail.
+    - name: detail
+      dtype: string
+      nullable: false
+      unit: meta
+      note: Короткое пояснение, если оно нужно.
