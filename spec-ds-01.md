@@ -294,7 +294,7 @@
 python -m vk_case
 ```
 
-Команда читает единственный xlsx в `data/raw/`, пишет таблицы заново и проверяет `reconciliation`. Зависимости закреплены в `pyproject.toml`.
+Команда читает единственный xlsx в `data/raw/`, заново пишет `data/interim/` и `data/processed/`, затем проверяет `reconciliation.parquet` и `flag_checks.parquet`. Зависимости закреплены в `pyproject.toml`.
 
 Правила чтения:
 
