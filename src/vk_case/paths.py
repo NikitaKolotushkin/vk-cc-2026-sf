@@ -3,7 +3,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
 INTERIM_DIR = ROOT / "data" / "interim"
+PROCESSED_DIR = ROOT / "data" / "processed"
 SCHEMA_PATH = INTERIM_DIR / "schema.yml"
+PROCESSED_SCHEMA_PATH = PROCESSED_DIR / "schema.yml"
 
 EM_DASH = "\u2014"
 NOT_APPLICABLE = "not_applicable"

@@ -1,0 +1,167 @@
+version: 1
+built_from: data/interim
+row_policy: Строки interim сохраняются полностью. Флаг не удаляет и не меняет значения.
+tables:
+  businesses:
+    grain: Копия data/interim/businesses.parquet плюс флаги качества.
+    rows: 9754
+    primary_key:
+    - business_id
+    value_columns: Совпадают с одноимённой таблицей data/interim и идут перед флагами.
+    flags:
+    - name: is_exact_metric_clone
+      dtype: bool
+      nullable: false
+      rule: Повтор той же метрической строки. Первая строка группы в порядке таблицы не помечена.
+    - name: is_high_post_volume
+      dtype: bool
+      nullable: false
+      rule: posts_30d ≥ 1000.
+    - name: is_high_product_post_volume
+      dtype: bool
+      nullable: false
+      rule: product_posts_30d ≥ 1000.
+    - name: is_extreme_catalog
+      dtype: bool
+      nullable: false
+      rule: goods_loaded ≥ 10000.
+    - name: is_extreme_ad_spend
+      dtype: bool
+      nullable: false
+      rule: ad_spend_rub ≥ 1000000.
+    - name: is_price_floor_1
+      dtype: bool
+      nullable: false
+      rule: median_item_price_rub = 1. Пустая цена не помечается.
+    - name: is_price_zero
+      dtype: bool
+      nullable: false
+      rule: median_item_price_rub = 0. Пустая цена не помечается.
+    - name: is_price_cap_1060000
+      dtype: bool
+      nullable: false
+      rule: median_item_price_rub = 1060000.
+    - name: is_low_activity
+      dtype: bool
+      nullable: false
+      rule: posts_30d = 0 и clips_30d = 0.
+    - name: is_hard_zero
+      dtype: bool
+      nullable: false
+      rule: Ноль постов, клипов, обычных просмотров, загруженных товаров, услуг, заказов и рекламы.
+    - name: has_orders
+      dtype: bool
+      nullable: false
+      rule: checkout_orders > 0.
+    - name: has_orders_without_checkout
+      dtype: bool
+      nullable: false
+      rule: checkout_orders > 0 и checkout_enabled = false.
+    - name: has_orders_with_zero_gmv
+      dtype: bool
+      nullable: false
+      rule: checkout_orders > 0 и checkout_gmv_rub = 0.
+    - name: has_checkout_without_loaded_goods
+      dtype: bool
+      nullable: false
+      rule: checkout_enabled и goods_loaded = 0.
+    - name: has_loaded_without_active
+      dtype: bool
+      nullable: false
+      rule: goods_loaded > 0 и active_goods = 0.
+    - name: has_type_catalog_mismatch
+      dtype: bool
+      nullable: false
+      rule: без каталога или услужное при goods_loaded > 0, либо товарное при goods_loaded = 0.
+    - name: has_service_type_without_services
+      dtype: bool
+      nullable: false
+      rule: business_type = услужное и active_services = 0.
+    - name: has_product_posts_above_posts
+      dtype: bool
+      nullable: false
+      rule: product_posts_30d > posts_30d.
+    - name: has_engagement_above_views
+      dtype: bool
+      nullable: false
+      rule: Лайки или репосты больше просмотров у обычного или товарного контента.
+    - name: has_opens_without_product_views
+      dtype: bool
+      nullable: false
+      rule: product_card_opens_from_content > 0 и product_content_views = 0.
+    - name: has_aov_gap_gt_5pct
+      dtype: bool
+      nullable: false
+      rule: При заказах и ненулевом GMV |средний чек − GMV / заказы| / (GMV / заказы) > 0.05.
+    - name: has_ads_without_orders
+      dtype: bool
+      nullable: false
+      rule: ad_spend_rub > 0 и checkout_orders = 0.
+    - name: has_tool_not_nested
+      dtype: bool
+      nullable: false
+      rule: delivery_enabled или payment_enabled при checkout_enabled = false.
+  market_categories:
+    grain: Копия data/interim/market_categories.parquet плюс метки категорий.
+    rows: 18
+    primary_key:
+    - category
+    value_columns: Совпадают с одноимённой таблицей data/interim и идут перед флагами.
+    flags:
+    - name: is_residual_category
+      dtype: bool
+      nullable: false
+      rule: Категория «Другое» или «Не определена».
+    - name: is_all_goods_label
+      dtype: bool
+      nullable: false
+      rule: Категория «Все товары», не итог таблицы.
+  buyers_demo:
+    grain: Копия data/interim/buyers_demo.parquet плюс метки возраста и подавления.
+    rows: 15
+    primary_key:
+    - gender
+    - age_band
+    value_columns: Совпадают с одноимённой таблицей data/interim и идут перед флагами.
+    flags:
+    - name: is_age_unknown
+      dtype: bool
+      nullable: false
+      rule: age_band = н/д.
+    - name: is_market_suppressed
+      dtype: bool
+      nullable: false
+      rule: market_buyers пустой. Это подавление, не ноль.
+  buyers_region:
+    grain: Копия data/interim/buyers_region.parquet плюс метки региона и подавления.
+    rows: 89
+    primary_key:
+    - region
+    value_columns: Совпадают с одноимённой таблицей data/interim и идут перед флагами.
+    flags:
+    - name: is_unspecified_region
+      dtype: bool
+      nullable: false
+      rule: region = Не указан.
+    - name: is_market_suppressed
+      dtype: bool
+      nullable: false
+      rule: market_buyers пустой. Это подавление, не ноль.
+  flag_checks:
+    grain: Одна проверка числа строк с флагом.
+    rows: 29
+    primary_key:
+    - check_id
+    columns:
+    - name: check_id
+      dtype: string
+      nullable: false
+    - name: actual
+      dtype: int64
+      nullable: true
+    - name: expected
+      dtype: int64
+      nullable: true
+    - name: status
+      dtype: string
+      nullable: false

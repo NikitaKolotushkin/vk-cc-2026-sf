@@ -2,11 +2,11 @@
 
 Рабочий документ data-science ветки. Стратегии кейса здесь нет: сегменты, роль Маркета и путь покупателя остаются в `spec.md`.
 
-Дальнейшая работа читает только `data/interim/`. Это десять таблиц Parquet и `data/interim/schema.yml`. Имена колонок в коде — латинские, как в Parquet. Русская подпись, единица и правило пустоты — в `schema.yml` и в колонке `metric_ru`, где она есть.
+Значения метрик читаются из `data/interim/`: десять таблиц Parquet и `data/interim/schema.yml`. Для `businesses`, `market_categories`, `buyers_demo` и `buyers_region` та же таблица с флагами лежит в `data/processed/`. Имена колонок в коде — латинские, как в Parquet. Русская подпись, единица и правило пустоты — в `schema.yml` и в колонке `metric_ru`, где она есть.
 
 Сырой xlsx лежит в `data/raw/` и служит только входом `python -m vk_case`. Повторный разбор книги, `pandas.read_excel` и ручная правка чисел в анализ не входят. Пересборка перезаписывает Parquet и заново считает сверки. Ненулевой код возврата означает, что слой разъехался с этим контрактом.
 
-Статус на 15 ноября 2026: конвертация выполнена, 144 сверки в `reconciliation.parquet` пройдены. Строки не удалялись. Пустые значения не заменялись нулём. `businesses` и контур Маркета не соединены. Флаги в `data/processed/` не строились.
+Статус на 15 ноября 2026: конвертация выполнена, 144 сверки в `reconciliation.parquet` пройдены. Строки не удалялись. Пустые значения не заменялись нулём. `businesses` и контур Маркета не соединены. Поверх четырёх таблиц собран `data/processed/`: те же строки и булевы флаги качества. Значения колонок там не пересчитываются.
 
 ---
 
@@ -307,9 +307,13 @@ python -m vk_case
 - не заменять `average_order_value_rub` и `median_item_price_rub` формулой;
 - не подгонять `partner_gmv_rub` на 1 ₽ и не выкидывать расхождения категорий, демографии и регионов.
 
-`data/processed/` пока пуст. Когда он появится, это будут те же строки плюс булевы флаги. Пороги, уже записанные для этого слоя: `posts_30d` ≥ 1 000, `product_posts_30d` ≥ 1 000, `goods_loaded` ≥ 10 000, `ad_spend_rub` ≥ 1 000 000, относительный разрыв среднего чека > 5%. Флаги не удаляют строки. До отдельного решения этот слой не используется.
+`data/processed/` повторяет четыре таблицы и добавляет флаги. Остальные таблицы остаются только в `data/interim/`. Правила флагов и схема — `data/processed/schema.yml`. Число помеченных строк сверяется в `flag_checks.parquet`.
 
-Имена флагов, если слой будет собираться: `is_exact_metric_clone`, `is_high_post_volume`, `is_high_product_post_volume`, `is_extreme_catalog`, `is_extreme_ad_spend`, `is_price_floor_1`, `is_price_zero`, `is_price_cap_1060000`, `is_low_activity`, `is_hard_zero`, `has_orders`, `has_orders_without_checkout`, `has_orders_with_zero_gmv`, `has_checkout_without_loaded_goods`, `has_loaded_without_active`, `has_type_catalog_mismatch`, `has_service_type_without_services`, `has_product_posts_above_posts`, `has_engagement_above_views`, `has_opens_without_product_views`, `has_aov_gap_gt_5pct`, `has_ads_without_orders`, `has_tool_not_nested`. На справочниках: `is_residual_category` для «Другое» и «Не определена», `is_all_goods_label` для «Все товары», `is_unspecified_region`, `is_market_suppressed`, `is_age_unknown`.
+`businesses` получает 23 флага. Пороги: `posts_30d` ≥ 1 000 (33 строки), `product_posts_30d` ≥ 1 000 (4), `goods_loaded` ≥ 10 000 (5), `ad_spend_rub` ≥ 1 000 000 (10). `has_aov_gap_gt_5pct` — 215 строк, где при ненулевом GMV относительный разрыв среднего чека больше 5%. Семь строк с заказами и нулевым GMV в этот флаг не входят: у них `has_orders_with_zero_gmv`.
+
+`is_exact_metric_clone` истинен у 26 повторных строк. Первая строка каждой группы в порядке таблицы остаётся ложной, чтобы фильтр `is_exact_metric_clone = false` оставлял один экземпляр профиля. `is_low_activity` — 2 373 строки с нулём постов и клипов. `is_hard_zero` — 64 строки с нулём постов, клипов, обычных просмотров, загруженных товаров, услуг, заказов и рекламы. `has_type_catalog_mismatch` — 648 строк: `без каталога` или `услужное` при `goods_loaded > 0`, либо `товарное` при `goods_loaded = 0`. `has_service_type_without_services` — 1 611 строк типа `услужное` с нулём услуг. `has_engagement_above_views` — 17 строк, где лайки или репосты больше просмотров. `has_tool_not_nested` — 168 строк, где доставка или оплата включены при выключенном чекауте. `has_orders` — 298, `has_orders_without_checkout` — 14, `has_checkout_without_loaded_goods` — 1 907, `has_loaded_without_active` — 818, `has_product_posts_above_posts` — 11, `has_opens_without_product_views` — 40, `has_ads_without_orders` — 501. Цены: 94 строки с 1 ₽, 3 с 0 ₽, 3 с 1 060 000 ₽. Пустая цена ни один из этих флагов не включает.
+
+`market_categories`: `is_residual_category` у «Другое» и «Не определена», `is_all_goods_label` у «Все товары». `buyers_demo`: `is_age_unknown` при `age_band = н/д` (3 строки), `is_market_suppressed` при пустом `market_buyers` (2 строки). `buyers_region`: `is_unspecified_region` у «Не указан» (1 строка), `is_market_suppressed` у четырёх регионов с пустым Маркетом.
 
 ---
 
@@ -322,11 +326,11 @@ python -m vk_case
 3. Прочерк источника записан пустым значением и `null_reason = not_applicable`.
 4. Итоги источника разложены на `market_contour_metrics` и `market_platform_metrics`. Сумма контуров нигде не вычисляется.
 5. Реферальная строка лежит в `market_source_nested`, не в сумме источников.
-6. «Все товары», «Другое» и «Не определена» остаются в `market_categories`. Флагов на них пока нет.
-7. 26 строк-клонов остаются в `businesses`. Флага `is_exact_metric_clone` пока нет.
+6. «Все товары», «Другое» и «Не определена» остаются в `market_categories`. В `data/processed` у них стоят `is_all_goods_label` и `is_residual_category`.
+7. 26 повторных строк `businesses` остаются в таблице. В `data/processed` у них `is_exact_metric_clone = true`.
 8. Пустой Маркет в демографии и регионах остаётся пустым. Пустой автор остаётся пустым.
 9. GMV Партнёра не выравнивается. Дельта −1 ₽ записана в `reconciliation`.
 10. Квантование, средний чек и медианная цена не пересчитываются поверх колонок.
-11. Пороги флагов зафиксированы в разделе 4. Сами флаги не построены.
-12. Хранение — Parquet в `data/interim/` плюс YAML. CSV и DuckDB не создаются, пока это не запрошено отдельно.
+11. Флаги собраны в `data/processed/` по правилам раздела 4. Строки из-за них не удаляются.
+12. Хранение — Parquet в `data/interim/` и `data/processed/` плюс YAML. CSV и DuckDB не создаются, пока это не запрошено отдельно.
 13. `businesses` и контур Маркета не соединяются синтетическим ключом.

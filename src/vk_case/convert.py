@@ -16,6 +16,7 @@ import yaml
 from openpyxl import load_workbook
 
 from vk_case.paths import EM_DASH, INTERIM_DIR, NOT_APPLICABLE, PERIOD_TEXT, SCHEMA_PATH, raw_workbook
+from vk_case.flags import build_processed
 from vk_case.reconcile import RECONCILIATION_COLUMNS, run_reconciliation
 
 CONTOUR_MARKET = "market_vk"
@@ -136,7 +137,10 @@ def main() -> int:
     for name, table in tables.items():
         pq.write_table(table, INTERIM_DIR / f"{name}.parquet", compression="zstd")
     write_schema(source.name, {name: table.num_rows for name, table in tables.items()})
-    return run_reconciliation()
+    code = run_reconciliation()
+    if code != 0:
+        return code
+    return build_processed()
 
 
 def build_tables(source) -> dict[str, pa.Table]:
