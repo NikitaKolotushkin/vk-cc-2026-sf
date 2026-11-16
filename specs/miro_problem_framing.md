@@ -1,6 +1,6 @@
 # Problem Definition Worksheet — короткая версия для Miro
 
-Полный текст: `specs/04_miro_problem_framing_full.md`.
+Полный текст: `specs/miro_problem_framing_full.md`.
 
 Цифры файла — синтетика. Доли 9 754 переносим на бизнес-сообщества. Абсолюты не есть отчётность VK. Таргета в задании нет.
 
@@ -69,7 +69,7 @@
 
 ## 7. Источники
 
-- Бриф, 7 листов, `spec-ds-01`, бэклог гипотез, Q&A 16.11
+- Бриф, 7 листов, `specs/spec-ds-01.md`, бэклог гипотез, Q&A 16.11
 - Чек-лист VK Рекламы, справка VK Бизнес / Маркет / AdBlogger
 - Brand Analytics и публичные цифры VK. Mediascope и Data Insight ещё открыть
 - TikTok Shop. Озон — названный партнёр. Wildberries и Авито — только если так решила команда
