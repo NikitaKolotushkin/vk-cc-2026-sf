@@ -1,0 +1,10 @@
+status: подтверждена
+
+На флагах 2.4% заказов и 3.0% GMV.
+
+На слайд как находка не выносится.
+is_exact_metric_clone: 26
+has_orders_with_zero_gmv: 7
+is_extreme_ad_spend: 10
+is_extreme_catalog: 5
+is_high_post_volume: 33

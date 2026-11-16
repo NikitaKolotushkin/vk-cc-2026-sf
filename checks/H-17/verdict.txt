@@ -1,0 +1,7 @@
+status: закрыт
+
+В листе сообществ нет повтора, оплаты и заказов на покупателя. Числа контура в модель сообществ не переносятся.
+
+repeat market_vk 19.0
+repeat partner_1 26.6
+нет колонок: repeat_buyers_share_pct, paid_orders, orders_per_buyer
